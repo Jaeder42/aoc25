@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iostream>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -18,55 +19,51 @@ std::vector<std::string> split(const std::string &str, char delimiter) {
   return tokens;
 }
 
-bool isRepeating(const std::string &str, int divisions) {
-  int length = str.length();
-
-  if (length % divisions != 0) {
+bool repeating(std::string input, int chunk) {
+  if (input.length() % chunk != 0) {
     return false;
   }
+  std::string first = input.substr(0, chunk);
+  for (int j = chunk; j < input.length(); j += chunk) {
 
-  int chunkSize = length / divisions;
-
-  std::string firstChunk = str.substr(0, chunkSize);
-
-  for (int i = 1; i < divisions; i++) {
-    std::string nextChunk = str.substr(i * chunkSize, chunkSize);
-
-    if (nextChunk != firstChunk) {
+    std::string nextChunk = input.substr(j, chunk);
+    if (nextChunk != first) {
+      // std::cout << first << ":" << nextChunk << " -" << input << "\n";
       return false;
     }
   }
-
+  std::cout << "found repeating: " << input << " chunksize:  " << chunk << "\n";
   return true;
 }
 
-long sumMatchingPattern(long start, long end, int divisions) {
-  long total = 0;
-
-  for (long i = start; i < end; i++) {
-    std::string toStringed = std::to_string(i);
-
-    if (isRepeating(toStringed, divisions)) {
-      total += i;
-      std::cout << " Found (" << divisions << " parts): " << toStringed << "\n";
-    }
-  }
-  return total;
-}
-
 int main() {
-  std::ifstream file("./day2/test.txt");
+  std::ifstream file("./day2/input.txt");
   std::string str;
   long total = 0;
   while (std::getline(file, str)) {
-    auto splittedLines = split(str, ',');
-    for (const auto &line : splittedLines) {
-      // std::cout << line + "\n";
-      auto splittedLine = split(line, '-');
-      std::cout << splittedLine[0] << "-" << splittedLine[1];
-      for (int i = 2; i < line.length() / 2; i++) {
-        total += sumMatchingPattern(std::stol(splittedLine[0]),
-                                    std::stol(splittedLine[1]), i);
+    if (!str.empty()) {
+
+      auto splittedLines = split(str, ',');
+      for (const auto &line : splittedLines) {
+        // std::cout << line + "\n";
+
+        auto splittedLine = split(line, '-');
+        // std::cout << line << "\n";
+        for (long i = std::stol(splittedLine[0]);
+             i < std::stol(splittedLine[1]) + 1; i++) {
+          // std::cout << i << "\n";
+          std::string toStringed = std::to_string(i);
+          std::set<long> matches = {};
+          for (int j = 1; j < toStringed.length(); j++) {
+            // std::cout << "chunk: " << j << "\n";
+            if (repeating(toStringed, j)) {
+              matches.insert(i);
+            }
+          }
+          for (long match : matches) {
+            total += match;
+          }
+        }
       }
     }
   }
